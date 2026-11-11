@@ -2,28 +2,22 @@
 
 ## Running
 
+The repository contains `tests/test_api_key_manager.py` and uses pytest.
+
 ```sh
-uv run pytest --cov=api_key_manager   # tests with coverage report
-uv run python scripts/check.py      # every gate, as CI and the factory run it
+pytest tests/test_api_key_manager.py
 ```
 
 ## Policy
 
-- Branch coverage of `src/api_key_manager` must stay at or above 80 %; the gate fails below it.
-- Tests exercise the public API (`import api_key_manager`) and assert every observable effect:
-  return values, raised exceptions and their messages.
-- Each bug fix starts with a failing test that reproduces it.
-- Tests are deterministic: no network, no wall clock, no dependence on test order.
+- Tests import the public API from `api_key_manager` and assert return values, `ApiKeyError.code` values, event payloads and the redacted `KeyRecord` representation.
+- The test module uses deterministic helpers `_fixed_rng`, `_constant_rng`, `_make_default_rng`, `make_manager` and `recompute_checksum`; it does not need network access.
+- No coverage threshold or separate gate script is present in the provided source tree.
 
 ## Tiers
 
-- Local tier (every gate run, coverage measured here): unit and property tests, plus conformance on small
-  fixtures kept in the repository.
-- CI tier: conformance that needs an external tool or a download. Mark them `@pytest.mark.conformance`; `scripts/check.py` deselects them locally
-  (unless `FABRICA_CI=1`). The CI `conformance` job sets `FABRICA_CI=1` and runs the full suite. Tools are installed
-  by the optional `ci/conformance-setup.sh` (bash, CI only; verify every download against a pinned SHA-256), and
-  tagged tests skip cleanly when their tool is missing.
+No separate conformance tier is present. All tests are in `tests/test_api_key_manager.py`.
 
 ## Layout
 
-`tests/test_<module>.py` mirrors each public module. Shared fixtures go in `tests/conftest.py`.
+`tests/test_api_key_manager.py` is the only test module in the provided source tree. It includes tests named `test_key_record_repr_redacts_digest`, `test_key_record_frozen`, `test_in_memory_store_put_get_replace`, `test_in_memory_store_full`, `test_in_memory_store_invalid_max_entries`, `test_constructor_invalid_prefix`, `test_constructor_invalid_pepper`, `test_issue_returns_expected_token_and_record`, `test_issue_token_not_stored`, `test_issue_invalid_owner`, `test_issue_id_collision`, `test_issue_store_full_propagates`, `test_verify_success_returns_record` and `test_verify_bad_checksum`. These cover the record repr and frozen dataclass, in-memory store replace/full/invalid max, constructor validation, the acceptance token vector, that the token is not stored, invalid owner, id collision, store-full propagation, successful verification and bad-checksum rejection.
